@@ -1,0 +1,3 @@
+mutagen
+colorama
+musicbrainzngs
