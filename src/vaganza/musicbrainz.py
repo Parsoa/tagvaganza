@@ -1,7 +1,9 @@
+import os
 import re
 import json
 import string
 import functools
+import traceback
 
 from vaganza import(
     commons,
@@ -196,13 +198,32 @@ def find_tracks_in_recording(artist, album, release):
             numbers.pop(int(r), None)
             pretty_print('matched', blue(track), white('to'), green(r + '.' , choice['title']))
 
+def download_cover_art(album, release):
+    try:
+        print(release['id'])
+        results = musicbrainzngs.get_release_group_image_front(release['release-group']['id'])
+        for disc in album.discs:
+            try:
+                os.remove(os.path.join(disc.dir, 'cover.jpg'))
+                os.remove(os.path.join(disc.dir, 'Cover.jpg'))
+            except:
+                pass
+            with open(os.path.join(disc.dir, 'Cover.jpg'), 'wb') as cover_file:
+                cover_file.write(results)
+    except:
+        traceback.print_exc()
+        pass
+
 def get_album_track_list(artist, album):
     print(colorama.Fore.CYAN + '=============================================================================')
     artist = find_closest_artist(artist)
     release = find_closest_release(artist, album)
     if not release:
         return
+    download_cover_art(album, release)
+    album.release = release
     find_tracks_in_recording(artist, album, release)
+    album.fix_tags(artist)
 
 if not __name__  == '__main__':
     musicbrainzngs.set_useragent(app = 'tagvaganza', version = '0.0.1')

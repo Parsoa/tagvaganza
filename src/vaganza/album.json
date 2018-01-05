@@ -1,0 +1,93 @@
+couldn't find a release with a matching number of tracks, proceeding with arbitarry one
+{
+    "artist-credit": [
+        {
+            "artist": {
+                "alias-list": [
+                    {
+                        "alias": "\u30c0\u30fc\u30af\u30c8\u30e9\u30f3\u30ad\u30e5\u30ea\u30c6\u30a3",
+                        "sort-name": "\u30c0\u30fc\u30af\u30c8\u30e9\u30f3\u30ad\u30e5\u30ea\u30c6\u30a3"
+                    },
+                    {
+                        "alias": "\u30c0\u30fc\u30af\u30fb\u30c8\u30e9\u30f3\u30ad\u30e5\u30ea\u30c6\u30a3",
+                        "sort-name": "\u30c0\u30fc\u30af\u30fb\u30c8\u30e9\u30f3\u30ad\u30e5\u30ea\u30c6\u30a3"
+                    },
+                    {
+                        "alias": "Dark Tranguillity",
+                        "sort-name": "Dark Tranguillity"
+                    },
+                    {
+                        "alias": "Dark Tranquility",
+                        "sort-name": "Dark Tranquility"
+                    },
+                    {
+                        "alias": "Septic Broiler",
+                        "sort-name": "Septic Broiler"
+                    }
+                ],
+                "id": "9d30e408-1559-448b-b491-2f8de1583ccf",
+                "name": "Dark Tranquillity",
+                "sort-name": "Dark Tranquillity"
+            }
+        }
+    ],
+    "artist-credit-phrase": "Dark Tranquillity",
+    "asin": "B0019K9O34",
+    "barcode": "5051099761582",
+    "country": "DE",
+    "date": "2008-06-23",
+    "disambiguation": "Expanded Edition",
+    "ext:score": "100",
+    "id": "0b625fa8-5ca9-43f8-97bb-b73cb7fcab1b",
+    "label-info-list": [
+        {
+            "catalog-number": "CDV 9976158",
+            "label": {
+                "id": "727ad90b-7ef4-48d2-8f16-c34016544822",
+                "name": "Century Media"
+            }
+        }
+    ],
+    "medium-count": 2,
+    "medium-list": [
+        {
+            "disc-count": 1,
+            "disc-list": [],
+            "format": "CD",
+            "track-count": 16,
+            "track-list": []
+        },
+        {
+            "disc-count": 0,
+            "disc-list": [],
+            "format": "DVD-Video",
+            "track-count": 10,
+            "track-list": []
+        }
+    ],
+    "medium-track-count": 26,
+    "release-event-list": [
+        {
+            "area": {
+                "id": "85752fda-13c4-31a3-bee5-0e5cb1f51dad",
+                "iso-3166-1-code-list": [
+                    "DE"
+                ],
+                "name": "Germany",
+                "sort-name": "Germany"
+            },
+            "date": "2008-06-23"
+        }
+    ],
+    "release-group": {
+        "id": "9581e23a-ba4f-3111-a5dd-02d3d280e6ee",
+        "primary-type": "Album",
+        "type": "Album"
+    },
+    "status": "Official",
+    "text-representation": {
+        "language": "eng",
+        "script": "Latn"
+    },
+    "title": "Fiction"
+}

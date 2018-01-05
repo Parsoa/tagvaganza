@@ -1,0 +1,73 @@
+{
+    "alias-list": [
+        {
+            "alias": "\u30c0\u30fc\u30af\u30c8\u30e9\u30f3\u30ad\u30e5\u30ea\u30c6\u30a3",
+            "sort-name": "\u30c0\u30fc\u30af\u30c8\u30e9\u30f3\u30ad\u30e5\u30ea\u30c6\u30a3"
+        },
+        {
+            "alias": "\u30c0\u30fc\u30af\u30fb\u30c8\u30e9\u30f3\u30ad\u30e5\u30ea\u30c6\u30a3",
+            "sort-name": "\u30c0\u30fc\u30af\u30fb\u30c8\u30e9\u30f3\u30ad\u30e5\u30ea\u30c6\u30a3"
+        },
+        {
+            "alias": "Dark Tranguillity",
+            "sort-name": "Dark Tranguillity"
+        },
+        {
+            "alias": "Dark Tranquility",
+            "sort-name": "Dark Tranquility"
+        },
+        {
+            "alias": "Septic Broiler",
+            "sort-name": "Septic Broiler"
+        }
+    ],
+    "area": {
+        "id": "8f6c316e-9924-48ea-967b-16757dd82399",
+        "name": "Gothenburg",
+        "sort-name": "Gothenburg"
+    },
+    "begin-area": {
+        "id": "752fd91d-d4da-4eb9-9ce3-9947d6b582ba",
+        "name": "Billdal",
+        "sort-name": "Billdal"
+    },
+    "ext:score": "100",
+    "id": "9d30e408-1559-448b-b491-2f8de1583ccf",
+    "life-span": {
+        "begin": "1989",
+        "ended": "false"
+    },
+    "name": "Dark Tranquillity",
+    "sort-name": "Dark Tranquillity",
+    "tag-list": [
+        {
+            "count": "3",
+            "name": "swedish"
+        },
+        {
+            "count": "1",
+            "name": "gothenburg"
+        },
+        {
+            "count": "6",
+            "name": "melodic death metal"
+        },
+        {
+            "count": "3",
+            "name": "metal"
+        },
+        {
+            "count": "1",
+            "name": "death metal"
+        },
+        {
+            "count": "1",
+            "name": "gothic metal"
+        },
+        {
+            "count": "4",
+            "name": "gothenburg metal"
+        }
+    ],
+    "type": "Group"
+}

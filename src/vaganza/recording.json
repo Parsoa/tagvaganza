@@ -1,0 +1,272 @@
+{
+    "artist-credit": [
+        {
+            "artist": {
+                "alias-list": [
+                    {
+                        "alias": "\u30c0\u30fc\u30af\u30c8\u30e9\u30f3\u30ad\u30e5\u30ea\u30c6\u30a3",
+                        "sort-name": "\u30c0\u30fc\u30af\u30c8\u30e9\u30f3\u30ad\u30e5\u30ea\u30c6\u30a3"
+                    },
+                    {
+                        "alias": "\u30c0\u30fc\u30af\u30fb\u30c8\u30e9\u30f3\u30ad\u30e5\u30ea\u30c6\u30a3",
+                        "sort-name": "\u30c0\u30fc\u30af\u30fb\u30c8\u30e9\u30f3\u30ad\u30e5\u30ea\u30c6\u30a3"
+                    },
+                    {
+                        "alias": "Dark Tranguillity",
+                        "sort-name": "Dark Tranguillity"
+                    },
+                    {
+                        "alias": "Dark Tranquility",
+                        "sort-name": "Dark Tranquility"
+                    },
+                    {
+                        "alias": "Septic Broiler",
+                        "sort-name": "Septic Broiler"
+                    }
+                ],
+                "id": "9d30e408-1559-448b-b491-2f8de1583ccf",
+                "name": "Dark Tranquillity",
+                "sort-name": "Dark Tranquillity"
+            }
+        }
+    ],
+    "artist-credit-phrase": "Dark Tranquillity",
+    "ext:score": "100",
+    "id": "3a28aa17-c26d-446b-a8fd-a9136ec0a777",
+    "length": "262746",
+    "release-list": [
+        {
+            "artist-credit": [
+                {
+                    "artist": {
+                        "id": "89ad4ac3-39f7-470e-963a-56509c546377",
+                        "name": "Various Artists",
+                        "sort-name": "Various Artists"
+                    }
+                }
+            ],
+            "artist-credit-phrase": "Various Artists",
+            "country": "FR",
+            "date": "1997",
+            "id": "cf005ea9-d699-4f30-a149-6b5dd3133f07",
+            "medium-list": [
+                {
+                    "format": "CD",
+                    "position": "1",
+                    "track-count": 13,
+                    "track-list": [
+                        {
+                            "id": "88994d2c-c1e0-38a0-93e2-c1315e01154d",
+                            "length": "261880",
+                            "number": "11",
+                            "title": "Lady in Black",
+                            "track_or_recording_length": "261880"
+                        }
+                    ]
+                }
+            ],
+            "medium-track-count": 13,
+            "release-event-list": [
+                {
+                    "area": {
+                        "id": "08310658-51eb-3801-80de-5a0739207115",
+                        "iso-3166-1-code-list": [
+                            "FR"
+                        ],
+                        "name": "France",
+                        "sort-name": "France"
+                    },
+                    "date": "1997"
+                }
+            ],
+            "release-group": {
+                "id": "76ea6d79-9515-3e2e-a678-c248a6f5e1d9",
+                "primary-type": "Album",
+                "type": "Album"
+            },
+            "status": "Official",
+            "title": "Mercyful Fate Tribute"
+        },
+        {
+            "country": "FR",
+            "date": "2005",
+            "id": "2cb29d00-4a51-4e31-98db-67b755d809e0",
+            "medium-list": [
+                {
+                    "format": "CD",
+                    "position": "1",
+                    "track-count": 16,
+                    "track-list": [
+                        {
+                            "id": "04378925-35ae-3743-87c0-9fdfa7d77a14",
+                            "length": "262746",
+                            "number": "15",
+                            "title": "Lady in Black",
+                            "track_or_recording_length": "262746"
+                        }
+                    ]
+                }
+            ],
+            "medium-track-count": 16,
+            "release-event-list": [
+                {
+                    "area": {
+                        "id": "08310658-51eb-3801-80de-5a0739207115",
+                        "iso-3166-1-code-list": [
+                            "FR"
+                        ],
+                        "name": "France",
+                        "sort-name": "France"
+                    },
+                    "date": "2005"
+                }
+            ],
+            "release-group": {
+                "id": "06a50231-c772-3766-8f20-54dd144a2421",
+                "primary-type": "Album",
+                "type": "Album"
+            },
+            "status": "Official",
+            "title": "The Gallery"
+        },
+        {
+            "country": "GB",
+            "date": "2008-05-03",
+            "id": "ad517a6e-13b5-40fd-bf5f-87bd6bd087c7",
+            "medium-list": [
+                {
+                    "format": "CD",
+                    "position": "1",
+                    "track-count": 14,
+                    "track-list": [
+                        {
+                            "id": "5f721893-5f47-3bf7-b3e6-c5dbeaa24aac",
+                            "length": "265000",
+                            "number": "11",
+                            "title": "Lady in Black",
+                            "track_or_recording_length": "265000"
+                        }
+                    ]
+                }
+            ],
+            "medium-track-count": 14,
+            "release-event-list": [
+                {
+                    "area": {
+                        "id": "8a754a16-0027-3a29-b6d7-2b40ea0481ed",
+                        "iso-3166-1-code-list": [
+                            "GB"
+                        ],
+                        "name": "United Kingdom",
+                        "sort-name": "United Kingdom"
+                    },
+                    "date": "2008-05-03"
+                }
+            ],
+            "release-group": {
+                "id": "921ce342-552b-3388-9c11-06a5f48f7073",
+                "primary-type": "Album",
+                "secondary-type-list": [
+                    "Compilation"
+                ],
+                "type": "Compilation"
+            },
+            "status": "Bootleg",
+            "title": "A Closer End"
+        },
+        {
+            "country": "US",
+            "date": "2005-04-05",
+            "id": "cd0071fb-eb46-4bc0-85d4-4e049fef9543",
+            "medium-list": [
+                {
+                    "format": "CD",
+                    "position": "1",
+                    "track-count": 16,
+                    "track-list": [
+                        {
+                            "id": "47da2609-3757-39f1-b3a0-edc73356b67d",
+                            "length": "262746",
+                            "number": "15",
+                            "title": "Lady in Black",
+                            "track_or_recording_length": "262746"
+                        }
+                    ]
+                }
+            ],
+            "medium-track-count": 16,
+            "release-event-list": [
+                {
+                    "area": {
+                        "id": "489ce91b-6658-3307-9877-795b68554c98",
+                        "iso-3166-1-code-list": [
+                            "US"
+                        ],
+                        "name": "United States",
+                        "sort-name": "United States"
+                    },
+                    "date": "2005-04-05"
+                }
+            ],
+            "release-group": {
+                "id": "06a50231-c772-3766-8f20-54dd144a2421",
+                "primary-type": "Album",
+                "type": "Album"
+            },
+            "status": "Official",
+            "title": "The Gallery"
+        },
+        {
+            "country": "XW",
+            "date": "2003",
+            "id": "f3865107-b5a4-4e84-976f-0617b923b2a2",
+            "medium-list": [
+                {
+                    "format": "Digital Media",
+                    "position": "1",
+                    "track-count": 19,
+                    "track-list": [
+                        {
+                            "id": "75596a2c-36ee-41bd-abb4-6e8bf35fcb39",
+                            "length": "261910",
+                            "number": "7",
+                            "title": "Lady in Black",
+                            "track_or_recording_length": "261910"
+                        }
+                    ]
+                }
+            ],
+            "medium-track-count": 19,
+            "release-event-list": [
+                {
+                    "area": {
+                        "id": "525d4e18-3d00-31b9-a58b-a146a916de8f",
+                        "iso-3166-1-code-list": [
+                            "XW"
+                        ],
+                        "name": "[Worldwide]",
+                        "sort-name": "[Worldwide]"
+                    },
+                    "date": "2003"
+                }
+            ],
+            "release-group": {
+                "id": "a1f4c057-c076-4df3-bb65-792984bfebec",
+                "primary-type": "Album",
+                "secondary-type-list": [
+                    "Compilation"
+                ],
+                "type": "Compilation"
+            },
+            "status": "Bootleg",
+            "title": "Great Metal Covers, Volume 15"
+        }
+    ],
+    "tag-list": [
+        {
+            "count": "2",
+            "name": "melodic death metal"
+        }
+    ],
+    "title": "Lady in Black"
+}
