@@ -3,6 +3,7 @@ import json
 import string
 import argparse
 import functools
+import traceback
 
 from vaganza import(
     config,
@@ -44,7 +45,7 @@ def magenta(*args):
 
 def pretty_print(*args):
     def inner(*vargs):
-        return ''.join(functools.reduce(lambda x, y: x + str(y) + ' ', vargs))
+        return (''.join(functools.reduce(lambda x, y: x + str(y) + ' ', vargs))) + colorama.Fore.WHITE
     print(inner(colorama.Fore.WHITE, *args))
 
 def json_print(d):
@@ -56,18 +57,23 @@ def json_print(d):
 
 class Artist(object):
     def __init__(self, name, dir):
-        self.name = name
-        self.albums = {}
         self.dir = dir
-        self.path = os.path.normpath(self.dir + '/' + self.name)
+        self.name = name
+        self.path = os.path.join(self.dir, self.name)
+        self.albums = {}
 
 class Album(object):
     def __init__(self, title, dir):
-        self.title = title
-        self.discs = []
         self.dir = dir
+        self.path = os.path.join(self.dir, title)
+        self.discs = []
+        self.front = None
+        self.title = title
         self.release = None
-        self.path = os.path.normpath(self.dir + '/' + self.title)
+        if '_CORRECT' in self.title:
+            self.title = self.title.replace('_CORRECT', '')
+            os.rename(self.path, self.dir + '/' + self.title)
+            self.path = os.path.join(self.dir, self.title)
 
     def get_num_tracks(self):
         return sum(map(lambda x: len(x.tracks), self.discs))
@@ -75,69 +81,140 @@ class Album(object):
     def fix_tags(self, artist):
         for disc in self.discs:
             for track in disc.tracks:
-                disc.tracks[track].fix_tags(self.release, disc, artist)
+                disc.tracks[track].fix_tags(self, disc, artist)
                 disc.tracks[track].rename()
         self.rename()
 
     def rename(self):
+        if not self.release:
+            os.rename(self.path, self.path + '_CORRECT')
+            return
         year = self.release['date'].split('-')[0]
-        os.rename(self.path, self.dir + '/' + self.release['title'] + ' (' + year + ')')
+        os.rename(self.path, self.dir + '/' + self.release['title'].replace('/', '-') + ' (' + year + ')')
 
 class Disc(object):
     def __init__(self, number, dir):
+        self.dir = dir    
+        self.path = dir
         self.number = number
         self.tracks = {}
-        self.dir = dir
-        self.path = dir
 
 class Track(object):
     def __init__(self, title, dir):
-        self.title = title
         self.dir = dir
-        self.recording = None
-        self.path = os.path.normpath(self.dir + '/' + self.title)
+        self.path = os.path.join(self.dir, title)
+        self.title = title
         self.number = 0
         self.extension = get_file_extension(self.title)
+        self.recording = None
+        if '_CORRECT' in self.title:
+            self.title = self.title.replace('_CORRECT', '')
+            os.rename(self.path, self.dir + '/' + self.title)
+            self.path = os.path.join(self.dir, self.title)
 
     def rename(self):
         if not self.recording:
             os.rename(self.path, self.dir + '/' + get_file_name_without_extension(self.title) + '_CORRECT' + '.' + self.extension)
             return
-        n = int(self.number)
-        if n < 10:
-            self.number = '0' + str(self.number)
-        os.rename(self.path, self.dir + '/' + self.number + '. ' + self.recording['title'] + '.' + self.extension)
+        # for some EPs or Singles the track number might not be an int but rather a side name
+        try:
+            n = int(self.number)
+            if n < 10:
+                self.number = '0' + str(self.number)
+        except:
+            pass
+        os.rename(self.path, self.dir + '/' + self.number + '. ' + self.recording['title'].replace('/', '-') + '.' + self.extension)
 
-    def fix_tags(self, release, disc, artist):
-        if not self.recording:
-            return
-        audio = None
+    def fix_tags(self, album, disc, artist):
         if get_file_extension(self.title) == 'mp3':
-            self.fix_mp3_tags(release, disc, artist)
+            self.fix_mp3_tags(album, disc, artist)
         else:
-            self.fix_mp4_tags(release, disc, artist)
-            
+            self.fix_mp4_tags(album, disc, artist)
 
-    def fix_mp4_tags(self, release, disc, artist):
+    def fix_mp4_tags(self, album, disc, artist):
         audio = MP4(self.path)
         tags = audio.tags
-        tags['\xa9nam'] = 'KIIIR'
+        tags['\xa9nam'] = self.recording['title'] if self.recording else self.title # song title
+        tags['\xa9alb'] = album.release['title'] # album
+        tags['\xa9ART'] = artist['name'] # artist
+        tags['aART'] = artist['name'] # artist
+        tags['\xa9day'] = album.release['date'].split('-')[0]
+        try:
+            if self.recording:
+                int(self.number)
+                tags['trkn'] = int(self.number) # track number
+        except:
+            pass
+        try:
+            int(self.number)
+            tags['disk'] = int(disc.number) # disck number
+        except:
+            pass
+        #TODO tags['\xa9gen'] # genre
+        #TODO tags['\xa9lyr'] # lyrics
+        if album.front:
+            tags['disk'] = album.front
+        audio.save()
+        # remove extra stuff
+        tags.pop('\xa9wrt', None)
+        tags.pop('\xa9cmt', None)
+        tags.pop('desc', None)
+        tags.pop('purd', None)
+        tags.pop('\xa9grp', None)
+        tags.pop('purl', None)
+        tags.pop('egid', None)
+        tags.pop('catg', None)
+        tags.pop('keyw', None)
+        tags.pop('\xa9too', None)
+        tags.pop('cprt', None)
+        tags.pop('soal', None)
+        tags.pop('soaa', None)
+        tags.pop('soar', None)
+        tags.pop('sonm', None)
+        tags.pop('soco', None)
+        tags.pop('sosn', None)
+        tags.pop('tvsh', None)
+        tags.pop('\xa9wrk', None)
+        tags.pop('\xa9mvn', None)
+        # boolean values
+        tags.pop('cpil', None)
+        tags.pop('pgap', None)
+        tags.pop('pcst', None)
+        # integer values
+        tags.pop('tmpo', None)
+        tags.pop('\xa9mvc', None)
+        tags.pop('\xa9mvi', None)
+        tags.pop('shwm', None)
+        tags.pop('stik', None)
+        tags.pop('rtng', None)
+        tags.pop('tves', None)
+        tags.pop('tmpo', None)
+        tags.pop('tvsn', None)
+        # iTunes internal IDs
+        tags.pop('plID', None)
+        tags.pop('cnID', None)
+        tags.pop('geID', None)
+        tags.pop('atID', None)
+        tags.pop('sfID', None)
+        tags.pop('cmID', None)
+        tags.pop('akID', None)
         audio.save()
 
-    def fix_mp3_tags(self, release, disc, artist):
+    def fix_mp3_tags(self, album, disc, artist):
         audio = id3.ID3(self.path)
-        year = release['date'].split('-')[0]
-        audio.add(id3.TIT2(text = self.recording['title'])) # song title
-        audio.add(id3.TALB(text = release['title'])) # album
+        audio.add(id3.TIT2(text = self.recording['title'] if self.recording else self.title)) # song title
+        audio.add(id3.TALB(text = album.release['title'])) # album
         audio.add(id3.TPE1(text = artist['name'])) # artist
         audio.add(id3.TOPE(text = artist['name'])) # artist
-        audio.add(id3.TOLY(text = artist['name'])) # artist
         audio.add(id3.TPOS(text = str(disc.number))) # disc number
-        audio.add(id3.TRCK(text = str(self.number))) # track number
-        audio.add(id3.TDRC(text = year)) # date
+        if self.recording:
+            audio.add(id3.TRCK(text = str(self.number))) # track number
+        audio.add(id3.TDRC(text = album.release['date'].split('-')[0])) # date
+        audio.delall('APIC')
+        if album.front:
+            audio.add(id3.APIC(3, 'image/png', 3, 'Cover', album.front))
         #TODO audio.delall('TCON') # genre
         audio.save()
-        print('deleting excess tags')
         # Delete these
         # Identification frames
         audio.delall('TIT3')
@@ -306,14 +383,14 @@ if __name__ == '__main__':
     for (dirpath, dirnames, filenames) in os.walk(c.work_dir):
         if dirpath == c.work_dir:
             for artist in dirnames:
-                print('found artist', artist)
+                pretty_print('found artist', artist)
                 artists[artist] = Artist(name = artist, dir = dirpath)
             continue
         # if we are inside an artist directory
         artist = get_artist_for_directory(dirpath, artists)
         if artist:
             for album in dirnames:
-                print('\tfound album', album)
+                pretty_print('\tfound album', album)
                 artist.albums[album] = Album(title = album, dir = dirpath)
             continue
         # if we are inside an album directory
@@ -326,7 +403,7 @@ if __name__ == '__main__':
                     #TODO we are cheating here, I've assumed disk directories are manually fixed
                     number = int(disc[5:])
                     album.discs.append(Disc(number = number, dir = dirpath + '/Disc ' + str(number)))
-                    print('\t\tfound disc', disc)
+                    pretty_print('\t\tfound disc', disc)
             # single disc album
             if not found:
                 album.discs.append(Disc(number = 1, dir = dirpath))
@@ -346,5 +423,9 @@ if __name__ == '__main__':
     # 
     for artist in artists:
         for album in artists[artist].albums:
+            try:
             # if 'atoma' in album.lower():
-            musicbrainz.get_album_track_list(artists[artist], artists[artist].albums[album])
+                musicbrainz.get_album_track_list(artists[artist], artists[artist].albums[album])
+            except:
+                pretty_print(colorama.Fore.RED + 'couldn\'t fix tags for album', magenta(album))
+                traceback.print_exc()
