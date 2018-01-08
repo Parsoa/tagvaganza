@@ -4,6 +4,7 @@ import string
 import argparse
 import functools
 import traceback
+import subprocess
 
 from vaganza import(
     config,
@@ -12,11 +13,14 @@ from vaganza import(
     capitalization
 )
 
+import PIL.Image as Image
 import colorama
 
 from mutagen.mp3 import MP3
-from mutagen.mp4 import MP4
+from mutagen.mp4 import *
 import mutagen.id3 as id3
+
+from googleapiclient.discovery import build
 
 # ============================================================================================================================ #
 # ============================================================================================================================ #
@@ -75,8 +79,56 @@ class Album(object):
             os.rename(self.path, self.dir + '/' + self.title)
             self.path = os.path.join(self.dir, self.title)
 
+    def search_cover_art_google(self, artist):
+        service = build("customsearch", "v1", developerKey = commons.google_api_key)
+        q = artist.name + ' ' + self.title
+        print(q)
+        res = service.cse().list(q = artist.name + ' ' + self.title, imgSize = 'large', cx = commons.search_engine_name).execute()
+        n = 0
+        for item in res['items']:
+            if 'pagemap' in item:
+                if 'cse_image' in item['pagemap']:
+                    subprocess.call(['wget', '-P', os.path.join(self.dir, self.title, 'covers'), item['pagemap']['cse_image'][0]['src']])
+        self.pick_cover()
+
+    def pick_cover(self):
+        path = os.path.join(self.dir, self.title, 'covers')
+        best = None
+        for (dirpath, dirnames, filenames) in os.walk(path):
+            for filename in filenames:
+                if not get_file_extension(filename).lower() == 'jpg':
+                    os.remove(os.path.join(dirpath, filename))
+                else:
+                    im = Image.open(os.path.join(dirpath, filename))
+                    width, height = im.size
+                    if abs(width - height) < 50: # this is square image
+                        if min(width, height) > 600: # large enough
+                            if not best:
+                                best = (filename, width, height)
+                            else:
+                                if max(best[1], best[2]) < max(width, height):
+                                    best = (filename, width, height)
+                        else:
+                            os.remove(os.path.join(dirpath, filename))
+                    else:
+                        os.remove(os.path.join(dirpath, filename))
+        if best:
+            for disc in self.discs:
+                os.rename(os.path.join(path, best[0]), os.path.join(disc.dir, 'Cover.jpg'))
+        else:
+            pretty_print(red('couldn\'t find any good enough images, you may want to search manually'))
+        os.rmdir(path)
+
     def get_num_tracks(self):
         return sum(map(lambda x: len(x.tracks), self.discs))
+
+    def set_cover_arts(self, artist):
+        if not os.path.isfile(os.path.join(self.discs[0].dir, 'Cover.jpg')):
+            print('no cover art available searching for one')
+            self.search_cover_art_google(artist)
+        for disc in self.discs:
+            for track in disc.tracks:
+                disc.tracks[track].set_cover_art(self)
 
     def fix_tags(self, artist):
         for disc in self.discs:
@@ -94,7 +146,7 @@ class Album(object):
 
 class Disc(object):
     def __init__(self, number, dir):
-        self.dir = dir    
+        self.dir = dir
         self.path = dir
         self.number = number
         self.tracks = {}
@@ -112,6 +164,18 @@ class Track(object):
             os.rename(self.path, self.dir + '/' + self.title)
             self.path = os.path.join(self.dir, self.title)
 
+    def convert(self):
+        try:
+            ext = get_file_extension(self.title)
+            if ext.lower() == 'flac':
+                pretty_print(magenta('convertin FLAC to ALAC:', self.title))
+                subprocess.call(['ffmpeg', '-i', self.path, '-acodec', 'alac', os.path.join(self.dir, get_file_name_without_extension(self.title) + '.m4a')])
+                self.title = get_file_name_without_extension(self.title) + '.m4a'
+                self.extension = get_file_extension(self.title)
+                self.path = os.path.join(self.dir, self.title)
+        except:
+            traceback.print_exc()
+
     def rename(self):
         if not self.recording:
             os.rename(self.path, self.dir + '/' + get_file_name_without_extension(self.title) + '_CORRECT' + '.' + self.extension)
@@ -123,37 +187,75 @@ class Track(object):
                 self.number = '0' + str(self.number)
         except:
             pass
-        os.rename(self.path, self.dir + '/' + self.number + '. ' + self.recording['title'].replace('/', '-') + '.' + self.extension)
+        os.rename(self.path, self.dir + '/' + self.number + '. ' + self.recording['title'].replace('/', '-').replace(':', ' -') + '.' + self.extension)
 
     def fix_tags(self, album, disc, artist):
+        self.convert()
         if get_file_extension(self.title) == 'mp3':
             self.fix_mp3_tags(album, disc, artist)
         else:
             self.fix_mp4_tags(album, disc, artist)
 
+    def set_cover_art(self, album):
+        t = get_file_name_without_extension(self.title)
+        self.number = str(t.split('.')[0])
+        t = t[t.find('.') + 2:]
+        if get_file_extension(self.title) == 'mp3':
+            audio = id3.ID3(self.path)
+            audio.add(id3.TIT2(text = t))
+            audio.add(id3.TRCK(text = str(self.number))) # track number
+            audio.delall('APIC')
+            try:
+                with open(os.path.join(self.dir, 'Cover.jpg'), 'rb') as cover_file:
+                    audio.add(id3.APIC(3, 'image/png', 3, 'Cover', cover_file.read()))
+            except:
+                pass
+            audio.save()
+        else:
+            audio = MP4(self.path)
+            tags = audio.tags
+            tags.pop('covr', None)
+            tags['\xa9nam'] = t
+            tags['trkn'] = [(int(self.number), album.get_num_tracks())] # track number
+            try:
+                with open(os.path.join(self.dir, 'Cover.jpg'), 'rb') as cover_file:
+                    tags['covr'] = [
+                        MP4Cover(cover_file.read(), imageformat = MP4Cover.FORMAT_JPEG)
+                    ]
+            except:
+                pass
+            audio.save()
+
     def fix_mp4_tags(self, album, disc, artist):
         audio = MP4(self.path)
         tags = audio.tags
-        tags['\xa9nam'] = self.recording['title'] if self.recording else self.title # song title
+        extra_tags = []
+        for key in tags:
+            if key.startswith('--'):
+                extra_tags.append(key)
+        tags['\xa9nam'] = self.recording['title'] if self.recording else get_file_name_without_extension(self.title) # song title
         tags['\xa9alb'] = album.release['title'] # album
         tags['\xa9ART'] = artist['name'] # artist
-        tags['aART'] = artist['name'] # artist
+        tags['aART'] = artist['name'] # album artist
         tags['\xa9day'] = album.release['date'].split('-')[0]
+        tags['trkn'] = [(int(self.number), album.get_num_tracks())] # track number
+        # if self.recording:
+        #     try:
+        #         # tags.pop('trkn', None)
+        #         tags['trkn'] = [(int(self.number), album.get_num_tracks())] # track number
+        #     except:
+        #         traceback.print_exc()
         try:
-            if self.recording:
-                int(self.number)
-                tags['trkn'] = int(self.number) # track number
+            tags['disk'] = [(int(disc.number), len(album.discs))] # disc number
         except:
-            pass
-        try:
-            int(self.number)
-            tags['disk'] = int(disc.number) # disck number
-        except:
-            pass
+            traceback.print_exc()
         #TODO tags['\xa9gen'] # genre
         #TODO tags['\xa9lyr'] # lyrics
+        tags.pop('covr', None)
         if album.front:
-            tags['disk'] = album.front
+            tags['covr'] = [
+                MP4Cover(album.front, imageformat = MP4Cover.FORMAT_JPEG)
+            ]
         audio.save()
         # remove extra stuff
         tags.pop('\xa9wrt', None)
@@ -198,17 +300,20 @@ class Track(object):
         tags.pop('sfID', None)
         tags.pop('cmID', None)
         tags.pop('akID', None)
+        # custom -- tags
+        for tag in extra_tags:
+            tags.pop(tag, None)
         audio.save()
 
     def fix_mp3_tags(self, album, disc, artist):
         audio = id3.ID3(self.path)
-        audio.add(id3.TIT2(text = self.recording['title'] if self.recording else self.title)) # song title
+        audio.add(id3.TIT2(text = self.recording['title'] if self.recording else get_file_name_without_extension(self.title))) # song title
         audio.add(id3.TALB(text = album.release['title'])) # album
         audio.add(id3.TPE1(text = artist['name'])) # artist
         audio.add(id3.TOPE(text = artist['name'])) # artist
         audio.add(id3.TPOS(text = str(disc.number))) # disc number
-        if self.recording:
-            audio.add(id3.TRCK(text = str(self.number))) # track number
+        # if self.recording:
+        audio.add(id3.TRCK(text = str(self.number))) # track number
         audio.add(id3.TDRC(text = album.release['date'].split('-')[0])) # date
         audio.delall('APIC')
         if album.front:
@@ -371,6 +476,28 @@ def get_disc_for_directory(path, artists):
                     return disc
     return None
 
+def iterate_scans(path):
+    print('iterating scans', path)
+    # first change everything to a temporary name so that the new names will not overwrite old files in case they are
+    # already named in this format 
+    n = 0
+    for (dirpath, dirnames, filenames) in os.walk(path):
+        print(dirpath, dirnames, filenames)
+        for filename in filenames:
+            ext = get_file_extension(filename)
+            number = str(n) if n > 10 else '0' + str(n)
+            base = 'KIRE_KHAR_' + number
+            n += 1
+            os.rename(os.path.join(dirpath, filename), os.path.join(dirpath, base + '.' + ext))
+    n = 0
+    for (dirpath, dirnames, filenames) in os.walk(path):
+        print(dirpath, dirnames, filenames)
+        for filename in filenames:
+            ext = get_file_extension(filename)
+            number = str(n) if n > 10 else '0' + str(n)
+            n += 1
+            # os.rename(os.path.join(dirpath, filename), os.path.join(dirpath, number + '.' + ext))
+
 # ============================================================================================================================ #
 # ============================================================================================================================ #
 # ============================================================================================================================ #
@@ -404,6 +531,8 @@ if __name__ == '__main__':
                     number = int(disc[5:])
                     album.discs.append(Disc(number = number, dir = dirpath + '/Disc ' + str(number)))
                     pretty_print('\t\tfound disc', disc)
+                if disc == 'Scans':
+                    iterate_scans(os.path.join(dirpath, disc))
             # single disc album
             if not found:
                 album.discs.append(Disc(number = 1, dir = dirpath))
@@ -420,12 +549,16 @@ if __name__ == '__main__':
                     disc.tracks[track] = Track(title = track, dir = dirpath)
                 # print('\t\t\tfound track', track)
             continue
-    # 
+    #
     for artist in artists:
         for album in artists[artist].albums:
             try:
             # if 'atoma' in album.lower():
-                musicbrainz.get_album_track_list(artists[artist], artists[artist].albums[album])
+                if c.set_covers:
+                    artists[artist].albums[album].set_cover_arts(artists[artist])
+                    # artists[artist].albums[album].search_cover_art_google(artists[artist])
+                else:
+                    musicbrainz.get_album_track_list(artists[artist], artists[artist].albums[album])
             except:
                 pretty_print(colorama.Fore.RED + 'couldn\'t fix tags for album', magenta(album))
                 traceback.print_exc()

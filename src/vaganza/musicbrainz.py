@@ -14,7 +14,7 @@ import colorama
 import musicbrainzngs
 
 # ============================================================================================================================ #
-# ============================================================================================================================ #
+# http://python-musicbrainzngs.readthedocs.io/en/v0.6/api/
 # ============================================================================================================================ #
 
 def identitiy(*vargs, sep = ' '):
@@ -181,13 +181,15 @@ def find_closest_release(artist, album):
 
 def find_tracks_in_recording(artist, album, release):
     results = musicbrainzngs.search_recordings(reid = release['id'])['recording-list']
-    # numbers = {}
-    # for i in range(1, album.get_num_tracks() + 1):
-    #     numbers[i] = True
+    numbers = []
+    for i in range(0, album.get_num_tracks()):
+        numbers.append(True)
+    unmatched = []
     for disc in album.discs:
         for track in disc.tracks:
             choice = find_minimum_cost_match(results, track, 'title')
             if not choice:
+                unmatched.append(disc.tracks[track])
                 pretty_print('couldn\'t find a recording with a matching title for', red(track))
                     #white(', closest match: '), magenta(choice['title']))
                 continue
@@ -198,29 +200,32 @@ def find_tracks_in_recording(artist, album, release):
             disc.tracks[track].recording = choice
             disc.tracks[track].number = r
             results.pop(results.index(choice))
-            # try:
-            #     numbers.pop(int(r), None)
-            # except:
-            #     pretty_print('number', magenta(r))
+            try:
+                numbers[int(r) - 1] = False
+            except:
+                pretty_print('number', magenta(r))
+                traceback.print_exc()
             pretty_print('matched', blue(track), white('to'), green(r + '.' , choice['title']))
+    for track in unmatched:
+        for i in range(0, len(numbers)):
+            if numbers[i]:
+                numbers[i] = False
+                track.number = str(i + 1)
 
 def download_cover_art(album, release):
     try:
-        # print(release['id'])
-        front = musicbrainzngs.get_release_group_image_front(release['release-group']['id'])
-        for disc in album.discs:
-            try:
-                os.remove(os.path.join(disc.dir, 'cover.jpg'))
-                os.remove(os.path.join(disc.dir, 'Cover.jpg'))
-            except:
-                pass
-            with open(os.path.join(disc.dir, 'Cover.jpg'), 'wb') as cover_file:
-                cover_file.write(front)
-                album.front = front
+        if os.path.isfile(os.path.join(disc.dir, 'Cover.jpg'), 'rb'):
+            print('high-res cover photo available')
+            album.front = cover_file.read()
+        else:
+            front = musicbrainzngs.get_release_group_image_front(release['release-group']['id'])
+            for disc in album.discs:
+                with open(os.path.join(disc.dir, 'Cover.jpg'), 'wb') as cover_file:
+                    cover_file.write(front)
+                    album.front = front
     except:
-        pretty_print(colorama.Fore.RED + 'couldn\'t find a front cover')
         # traceback.print_exc()
-        pass
+        pretty_print(colorama.Fore.RED + 'couldn\'t find a front cover')
 
 def get_album_track_list(artist, album):
     print(colorama.Fore.CYAN + '=============================================================================')
