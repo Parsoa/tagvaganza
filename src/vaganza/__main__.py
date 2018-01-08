@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 import string
 import argparse
 import functools
@@ -106,24 +107,24 @@ class Album(object):
                     im = Image.open(os.path.join(dirpath, filename))
                     width, height = im.size
                     if abs(width - height) < 50: # this is square image
-                        if min(width, height) > 600: # large enough
+                        if min(width, height) > 550: # large enough
                             if not best:
                                 best = (filename, width, height)
                             else:
                                 if max(best[1], best[2]) < max(width, height):
                                     best = (filename, width, height)
                         else:
-                            # os.remove(os.path.join(dirpath, filename))
+                            os.remove(os.path.join(dirpath, filename))
                             pass
                     else:
-                        # os.remove(os.path.join(dirpath, filename))
+                        os.remove(os.path.join(dirpath, filename))
                         pass
         if best:
             for disc in self.discs:
                 os.rename(os.path.join(path, best[0]), os.path.join(disc.dir, 'Cover.jpg'))
         else:
             pretty_print(red('couldn\'t find any good enough images, you may want to search manually'))
-        # os.rmdir(path)
+        shutil.rmtree(path)
 
     def get_num_tracks(self):
         return sum(map(lambda x: len(x.tracks), self.discs))
@@ -148,7 +149,7 @@ class Album(object):
             os.rename(self.path, self.path + '_CORRECT')
             return
         year = self.release['date'].split('-')[0]
-        os.rename(self.path, self.dir + '/' + self.release['title'].replace('/', '-') + ' (' + year + ')')
+        os.rename(self.path, self.dir + '/' + self.release['title'].replace('/', '-').replace(':', ' -') + ' (' + year + ')')
 
 class Disc(object):
     def __init__(self, number, dir):
@@ -559,10 +560,10 @@ if __name__ == '__main__':
     for artist in artists:
         for album in artists[artist].albums:
             try:
-            # if 'atoma' in album.lower():
                 if c.set_covers:
+                    print(colorama.Fore.CYAN + '=============================================================================')
+                    pretty_print(white('fixing missing cover arts for'), green(album))
                     artists[artist].albums[album].set_cover_arts(artists[artist])
-                    # artists[artist].albums[album].search_cover_art_google(artists[artist])
                 else:
                     musicbrainz.get_album_track_list(artists[artist], artists[artist].albums[album])
             except:
