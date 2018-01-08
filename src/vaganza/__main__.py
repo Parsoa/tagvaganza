@@ -80,16 +80,20 @@ class Album(object):
             self.path = os.path.join(self.dir, self.title)
 
     def search_cover_art_google(self, artist):
-        service = build("customsearch", "v1", developerKey = commons.google_api_key)
-        q = artist.name + ' ' + self.title
-        print(q)
-        res = service.cse().list(q = artist.name + ' ' + self.title, imgSize = 'large', cx = commons.search_engine_name).execute()
-        n = 0
-        for item in res['items']:
-            if 'pagemap' in item:
-                if 'cse_image' in item['pagemap']:
-                    subprocess.call(['wget', '-P', os.path.join(self.dir, self.title, 'covers'), item['pagemap']['cse_image'][0]['src']])
-        self.pick_cover()
+        try:
+            service = build("customsearch", "v1", developerKey = commons.google_api_key)
+            q = artist.name + ' ' + self.title
+            print(q)
+            resolutions = ['large', 'xlarge', 'xxlarge', 'huge']
+            for resolution in resolutions:
+                res = service.cse().list(q = artist.name + ' ' + self.title, imgSize = resolution, cx = commons.search_engine_name).execute()
+                for item in res['items']:
+                    if 'pagemap' in item:
+                        if 'cse_image' in item['pagemap']:
+                            subprocess.call(['wget', '-P', os.path.join(self.dir, self.title, 'covers'), item['pagemap']['cse_image'][0]['src']])
+            self.pick_cover()
+        except:
+            traceback.print_exc()
 
     def pick_cover(self):
         path = os.path.join(self.dir, self.title, 'covers')
@@ -109,15 +113,17 @@ class Album(object):
                                 if max(best[1], best[2]) < max(width, height):
                                     best = (filename, width, height)
                         else:
-                            os.remove(os.path.join(dirpath, filename))
+                            # os.remove(os.path.join(dirpath, filename))
+                            pass
                     else:
-                        os.remove(os.path.join(dirpath, filename))
+                        # os.remove(os.path.join(dirpath, filename))
+                        pass
         if best:
             for disc in self.discs:
                 os.rename(os.path.join(path, best[0]), os.path.join(disc.dir, 'Cover.jpg'))
         else:
             pretty_print(red('couldn\'t find any good enough images, you may want to search manually'))
-        os.rmdir(path)
+        # os.rmdir(path)
 
     def get_num_tracks(self):
         return sum(map(lambda x: len(x.tracks), self.discs))
@@ -480,7 +486,7 @@ def iterate_scans(path):
     print('iterating scans', path)
     # first change everything to a temporary name so that the new names will not overwrite old files in case they are
     # already named in this format 
-    n = 0
+    n = 1
     for (dirpath, dirnames, filenames) in os.walk(path):
         print(dirpath, dirnames, filenames)
         for filename in filenames:
@@ -489,14 +495,14 @@ def iterate_scans(path):
             base = 'KIRE_KHAR_' + number
             n += 1
             os.rename(os.path.join(dirpath, filename), os.path.join(dirpath, base + '.' + ext))
-    n = 0
+    n = 1
     for (dirpath, dirnames, filenames) in os.walk(path):
         print(dirpath, dirnames, filenames)
         for filename in filenames:
             ext = get_file_extension(filename)
             number = str(n) if n > 10 else '0' + str(n)
             n += 1
-            # os.rename(os.path.join(dirpath, filename), os.path.join(dirpath, number + '.' + ext))
+            os.rename(os.path.join(dirpath, filename), os.path.join(dirpath, number + '.' + ext))
 
 # ============================================================================================================================ #
 # ============================================================================================================================ #
