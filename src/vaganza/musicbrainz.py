@@ -229,7 +229,8 @@ def download_cover_art(album, release):
 
 def get_album_track_list(artist, album):
     print(colorama.Fore.CYAN + '=============================================================================')
-    artist = find_closest_artist(artist)
+    artist.artist = find_closest_artist(artist)
+    artist = artist.artist
     release = find_closest_release(artist, album)
     if not release:
         return

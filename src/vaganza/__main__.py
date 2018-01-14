@@ -27,7 +27,7 @@ from googleapiclient.discovery import build
 # ============================================================================================================================ #
 # ============================================================================================================================ #
 
-def identitiy(*vargs, sep = ' '):
+def identitiy(sep = ' ', *vargs):
     return ''.join(functools.reduce(lambda x, y: x + str(y) + sep, vargs))
 
 def white(*args):
@@ -65,7 +65,17 @@ class Artist(object):
         self.dir = dir
         self.name = name
         self.path = os.path.join(self.dir, self.name)
+        print(self.path)
         self.albums = {}
+        self.artist = None
+        if '_CORRECT' in self.name:
+            self.title = self.name.replace('_CORRECT', '')
+            os.rename(self.path, self.dir + '/' + self.name)
+            self.path = os.path.join(self.dir, self.name)
+
+    def rename(self):
+        if self.artist:
+            os.rename(self.path, self.dir + '/' + self.artist['name'].replace('/', '-').replace(':', ' -'))
 
 class Album(object):
     def __init__(self, title, dir):
@@ -177,6 +187,7 @@ class Track(object):
             if ext.lower() == 'flac':
                 pretty_print(magenta('convertin FLAC to ALAC:', self.title))
                 subprocess.call(['ffmpeg', '-i', self.path, '-acodec', 'alac', os.path.join(self.dir, get_file_name_without_extension(self.title) + '.m4a')])
+                os.remove(self.path)
                 self.title = get_file_name_without_extension(self.title) + '.m4a'
                 self.extension = get_file_extension(self.title)
                 self.path = os.path.join(self.dir, self.title)
@@ -205,7 +216,13 @@ class Track(object):
 
     def set_cover_art(self, album):
         t = get_file_name_without_extension(self.title)
-        self.number = str(t.split('.')[0])
+        try:
+            self.number = int(str(t.split('.')[0]))
+        except:
+            # TODO
+            # this can happen if this album wasn't matched to any other album and all tracks remain in
+            # their original ugly naming
+            pass
         t = t[t.find('.') + 2:]
         if get_file_extension(self.title) == 'mp3':
             audio = id3.ID3(self.path)
@@ -492,7 +509,7 @@ def iterate_scans(path):
         print(dirpath, dirnames, filenames)
         for filename in filenames:
             ext = get_file_extension(filename)
-            number = str(n) if n > 10 else '0' + str(n)
+            number = str(n) if n >= 10 else '0' + str(n)
             base = 'KIRE_KHAR_' + number
             n += 1
             os.rename(os.path.join(dirpath, filename), os.path.join(dirpath, base + '.' + ext))
@@ -501,7 +518,7 @@ def iterate_scans(path):
         print(dirpath, dirnames, filenames)
         for filename in filenames:
             ext = get_file_extension(filename)
-            number = str(n) if n > 10 else '0' + str(n)
+            number = str(n) if n >= 10 else '0' + str(n)
             n += 1
             os.rename(os.path.join(dirpath, filename), os.path.join(dirpath, number + '.' + ext))
 
@@ -516,10 +533,14 @@ if __name__ == '__main__':
     # get all artists and album names
     for (dirpath, dirnames, filenames) in os.walk(c.work_dir):
         if dirpath == c.work_dir:
-            for artist in dirnames:
-                pretty_print('found artist', artist)
-                artists[artist] = Artist(name = artist, dir = dirpath)
-            continue
+            if c.is_artist:
+                artist = dirpath.split('/')[-1]
+                artists[artist] = Artist(name = artist, dir = os.path.abspath(os.path.join(dirpath, '..')))
+            else:
+                for artist in dirnames:
+                    pretty_print('found artist', artist)
+                    artists[artist] = Artist(name = artist, dir = dirpath)
+                continue
         # if we are inside an artist directory
         artist = get_artist_for_directory(dirpath, artists)
         if artist:
@@ -542,11 +563,12 @@ if __name__ == '__main__':
                     iterate_scans(os.path.join(dirpath, disc))
             # single disc album
             if not found:
+                print('\t\t\tfound disc Disc 0')
                 album.discs.append(Disc(number = 1, dir = dirpath))
                 for track in filenames:
                     if is_audio_track(track):
                         album.discs[0].tracks[track] = Track(title = track, dir = dirpath)
-                    # print('\t\t\tfound track', track)
+                        print('\t\t\tfound track', track)
             continue
         # we are inside a disc direcotry
         disc = get_disc_for_directory(dirpath, artists)
@@ -554,7 +576,7 @@ if __name__ == '__main__':
             for track in filenames:
                 if is_audio_track(track):
                     disc.tracks[track] = Track(title = track, dir = dirpath)
-                # print('\t\t\tfound track', track)
+                    print('\t\t\tfound track', track)
             continue
     #
     for artist in artists:
@@ -569,3 +591,4 @@ if __name__ == '__main__':
             except:
                 pretty_print(colorama.Fore.RED + 'couldn\'t fix tags for album', magenta(album))
                 traceback.print_exc()
+        artists[artist].rename()
