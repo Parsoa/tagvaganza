@@ -214,9 +214,10 @@ def find_tracks_in_recording(artist, album, release):
 
 def download_cover_art(album, release):
     try:
-        if os.path.isfile(os.path.join(disc.dir, 'Cover.jpg'), 'rb'):
-            print('high-res cover photo available')
-            album.front = cover_file.read()
+        if os.path.isfile(os.path.join(album.path, 'Cover.jpg')):
+            pretty_print(cyan('high-res cover photo available'))
+            with open(os.path.join(album.path, 'Cover.jpg'), 'rb') as cover_file:
+                album.front = cover_file.read()
         else:
             front = musicbrainzngs.get_release_group_image_front(release['release-group']['id'])
             for disc in album.discs:
@@ -224,12 +225,15 @@ def download_cover_art(album, release):
                     cover_file.write(front)
                     album.front = front
     except:
-        # traceback.print_exc()
+        traceback.print_exc()
         pretty_print(colorama.Fore.RED + 'couldn\'t find a front cover')
 
 def get_album_track_list(artist, album):
     print(colorama.Fore.CYAN + '=============================================================================')
-    artist.artist = find_closest_artist(artist)
+    a = find_closest_artist(artist)
+    if not a:
+        return
+    artist.artist = a
     artist = artist.artist
     release = find_closest_release(artist, album)
     if not release:

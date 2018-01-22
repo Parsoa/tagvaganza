@@ -77,6 +77,10 @@ class Artist(object):
         if self.artist:
             os.rename(self.path, self.dir + '/' + self.artist['name'].replace('/', '-').replace(':', ' -'))
 
+# ============================================================================================================================ #
+# ============================================================================================================================ #
+# ============================================================================================================================ #
+
 class Album(object):
     def __init__(self, title, dir):
         self.dir = dir
@@ -136,16 +140,18 @@ class Album(object):
             pretty_print(red('couldn\'t find any good enough images, you may want to search manually'))
         shutil.rmtree(path)
 
-    def get_num_tracks(self):
-        return sum(map(lambda x: len(x.tracks), self.discs))
-
     def set_cover_arts(self, artist):
+        title = self.title[::-1][7:][::-1]
+        year = self.title[::-1][1:5][::-1]
+        print('title', title)
+        print('year', year)
+        self.release = {'title': title, 'date': year}
         if not os.path.isfile(os.path.join(self.discs[0].dir, 'Cover.jpg')):
             print('no cover art available searching for one')
             self.search_cover_art_google(artist)
         for disc in self.discs:
             for track in disc.tracks:
-                disc.tracks[track].set_cover_art(self)
+                disc.tracks[track].set_cover_art(self, disc, artist)
 
     def fix_tags(self, artist):
         for disc in self.discs:
@@ -161,12 +167,23 @@ class Album(object):
         year = self.release['date'].split('-')[0]
         os.rename(self.path, self.dir + '/' + self.release['title'].replace('/', '-').replace(':', ' -') + ' (' + year + ')')
 
+    def get_num_tracks(self):
+        return sum(map(lambda x: len(x.tracks), self.discs))
+
+# ============================================================================================================================ #
+# ============================================================================================================================ #
+# ============================================================================================================================ #
+
 class Disc(object):
     def __init__(self, number, dir):
         self.dir = dir
         self.path = dir
         self.number = number
         self.tracks = {}
+
+# ============================================================================================================================ #
+# ============================================================================================================================ #
+# ============================================================================================================================ #
 
 class Track(object):
     def __init__(self, title, dir):
@@ -214,33 +231,41 @@ class Track(object):
         else:
             self.fix_mp4_tags(album, disc, artist)
 
-    def set_cover_art(self, album):
+    def set_cover_art(self, album, disc, artist):
         t = get_file_name_without_extension(self.title)
         try:
             self.number = int(str(t.split('.')[0]))
         except:
-            # TODO
-            # this can happen if this album wasn't matched to any other album and all tracks remain in
-            # their original ugly naming
+            traceback.print_exc()
             pass
         t = t[t.find('.') + 2:]
         if get_file_extension(self.title) == 'mp3':
             audio = id3.ID3(self.path)
-            audio.add(id3.TIT2(text = t))
+            audio.add(id3.TIT2(text = t)) # track name
             audio.add(id3.TRCK(text = str(self.number))) # track number
+            audio.add(id3.TALB(text = album.release['title'])) # album
+            audio.add(id3.TPE1(text = artist.name)) # artist
+            audio.add(id3.TDRC(text = album.release['date'])) # release date
+            audio.add(id3.TPOS(text = str(disc.number))) # disc number
+            # cover art
             audio.delall('APIC')
             try:
                 with open(os.path.join(self.dir, 'Cover.jpg'), 'rb') as cover_file:
                     audio.add(id3.APIC(3, 'image/png', 3, 'Cover', cover_file.read()))
             except:
                 pass
+            self.remove_extra_mp3_tags(audio)
             audio.save()
         else:
             audio = MP4(self.path)
             tags = audio.tags
             tags.pop('covr', None)
-            tags['\xa9nam'] = t
+            tags['\xa9nam'] = t # track name
             tags['trkn'] = [(int(self.number), album.get_num_tracks())] # track number
+            tags['\xa9alb'] = album.release['title'] # album
+            tags['\xa9ART'] = artist.name # artist
+            tags['\xa9day'] = album.release['date'] # release date
+            tags['aART'] = artist.name # album artist
             try:
                 with open(os.path.join(self.dir, 'Cover.jpg'), 'rb') as cover_file:
                     tags['covr'] = [
@@ -248,6 +273,7 @@ class Track(object):
                     ]
             except:
                 pass
+            self.remove_extra_mp4_tags(tags)
             audio.save()
 
     def fix_mp4_tags(self, album, disc, artist):
@@ -257,31 +283,30 @@ class Track(object):
         for key in tags:
             if key.startswith('--'):
                 extra_tags.append(key)
-        tags['\xa9nam'] = self.recording['title'] if self.recording else get_file_name_without_extension(self.title) # song title
+        tags['\xa9nam'] = self.recording['title'] if self.recording else get_file_name_without_extension(self.title) # track name
+        tags['trkn'] = [(int(self.number), album.get_num_tracks())] # track number
         tags['\xa9alb'] = album.release['title'] # album
         tags['\xa9ART'] = artist['name'] # artist
-        tags['aART'] = artist['name'] # album artist
-        tags['\xa9day'] = album.release['date'].split('-')[0]
-        tags['trkn'] = [(int(self.number), album.get_num_tracks())] # track number
-        # if self.recording:
-        #     try:
-        #         # tags.pop('trkn', None)
-        #         tags['trkn'] = [(int(self.number), album.get_num_tracks())] # track number
-        #     except:
-        #         traceback.print_exc()
+        tags['\xa9day'] = album.release['date'].split('-')[0] # release data
         try:
             tags['disk'] = [(int(disc.number), len(album.discs))] # disc number
         except:
             traceback.print_exc()
-        #TODO tags['\xa9gen'] # genre
-        #TODO tags['\xa9lyr'] # lyrics
+        tags['aART'] = artist['name'] # album artist
+        # cover art
         tags.pop('covr', None)
         if album.front:
             tags['covr'] = [
                 MP4Cover(album.front, imageformat = MP4Cover.FORMAT_JPEG)
             ]
         audio.save()
+        #TODO tags['\xa9gen'] # genre
+        #TODO tags['\xa9lyr'] # lyrics
         # remove extra stuff
+        self.remove_extra_mp4_tags(tags)
+        audio.save()
+
+    def remove_extra_mp4_tags(self, tags):
         tags.pop('\xa9wrt', None)
         tags.pop('\xa9cmt', None)
         tags.pop('desc', None)
@@ -325,9 +350,7 @@ class Track(object):
         tags.pop('cmID', None)
         tags.pop('akID', None)
         # custom -- tags
-        for tag in extra_tags:
-            tags.pop(tag, None)
-        audio.save()
+        return tags
 
     def fix_mp3_tags(self, album, disc, artist):
         audio = id3.ID3(self.path)
@@ -336,7 +359,6 @@ class Track(object):
         audio.add(id3.TPE1(text = artist['name'])) # artist
         audio.add(id3.TOPE(text = artist['name'])) # artist
         audio.add(id3.TPOS(text = str(disc.number))) # disc number
-        # if self.recording:
         audio.add(id3.TRCK(text = str(self.number))) # track number
         audio.add(id3.TDRC(text = album.release['date'].split('-')[0])) # date
         audio.delall('APIC')
@@ -344,6 +366,10 @@ class Track(object):
             audio.add(id3.APIC(3, 'image/png', 3, 'Cover', album.front))
         #TODO audio.delall('TCON') # genre
         audio.save()
+        self.remove_extra_mp3_tags(audio)
+        audio.save()
+
+    def remove_extra_mp3_tags(self, audio):
         # Delete these
         # Identification frames
         audio.delall('TIT3')
@@ -460,7 +486,7 @@ class Track(object):
         # Audio seek point index
         audio.delall('ASPI')
         # 
-        audio.save()
+        return audio
 
 # ============================================================================================================================ #
 # file and directory parsing/iteration helpers
