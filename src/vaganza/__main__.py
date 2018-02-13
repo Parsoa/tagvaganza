@@ -150,11 +150,13 @@ class Album(object):
             print('no cover art available searching for one')
             self.search_cover_art_google(artist)
         for disc in self.discs:
+            disc.fix_track_numbers()
             for track in disc.tracks:
                 disc.tracks[track].set_cover_art(self, disc, artist)
 
     def fix_tags(self, artist):
         for disc in self.discs:
+            disc.fix_track_numbers()
             for track in disc.tracks:
                 disc.tracks[track].fix_tags(self, disc, artist)
                 disc.tracks[track].rename()
@@ -181,6 +183,70 @@ class Disc(object):
         self.number = number
         self.tracks = {}
 
+    def fix_track_numbers(self): 
+        # see if this is a vinyl record or not, if vinyl track numbers will are not integers
+        is_vinyl = False
+        tracks = list(map(lambda x: x[1], self.tracks.items()))
+        for track in tracks:
+            if track.number:
+                try:
+                    int(track.number)
+                except:
+                    is_vinyl = True
+        # it is a vinyl, track numbers are not integers
+        if is_vinyl:
+            numbers = {}
+            # iteratively find the buckets and their sizes
+            for track in tracks:
+                if track.number:
+                    key = track.number.upper()[0]
+                    if not key in numbers:
+                        numbers[key] = [None] * int(track.number[0:])
+            for track in tracks:
+                if track.number:
+                    key = track.number.upper()[0]
+                    numbers[key][int(track.number[0:]) - 1] = track
+            for track in tracks:
+                for key in numbers:
+                    if track in numbers[key]:
+                        # add the length of all buckets with a lexicographically smaller key
+                        offset = sum(list(map(lambda x: len(numbers[x]) if x < key else 0, numbers.keys())))
+                        track.number = offset + numbers[key].index(track) + 1
+            # now find the first empty place
+            for track in tracks:
+                if not track.number:
+                    for key in numbers:
+                        found = False
+                        for i in range(0, len(numbers[key])):
+                            # there is an empty slot in this bucket
+                            if not numbers[key][i]:
+                                found = True
+                                offset = sum(list(map(lambda x: len(numbers[x]) if x < key else 0, numbers.keys())))
+                                track.number = offset + i + 1
+                                break
+                        if found:
+                            break
+        # track numbers are integers
+        else:
+            # list of all possible track numbers
+            numbers = [False] * len(tracks)
+            # assign tracks with a number to their corresponding position
+            for track in tracks:
+                if track.number:
+                    numbers[int(track.number) - 1] = True
+            # assign gaps to tracks without numbers
+            for track in tracks:
+                if not track.number:
+                    found = False
+                    for i in range(0, len(numbers)):
+                        if not numbers[i]:
+                            found = True
+                            numbers[i] = True
+                            track.number = i + 1
+                            break
+                    if found:
+                        break
+
 # ============================================================================================================================ #
 # ============================================================================================================================ #
 # ============================================================================================================================ #
@@ -190,7 +256,7 @@ class Track(object):
         self.dir = dir
         self.path = os.path.join(self.dir, title)
         self.title = title
-        self.number = 0
+        self.number = None
         self.extension = get_file_extension(self.title)
         self.recording = None
         if '_CORRECT' in self.title:
@@ -232,16 +298,17 @@ class Track(object):
             self.fix_mp4_tags(album, disc, artist)
 
     def set_cover_art(self, album, disc, artist):
-        t = get_file_name_without_extension(self.title)
-        try:
-            self.number = int(str(t.split('.')[0]))
-        except:
-            traceback.print_exc()
-            pass
-        t = t[t.find('.') + 2:]
+        self.convert()
+        title = get_file_name_without_extension(self.title)
+        # try:
+        #     self.number = int(str(t.split('.')[0]))
+        # except:
+        #     traceback.print_exc()
+        #     pass
+        title = title[title.find('.') + 2:]
         if get_file_extension(self.title) == 'mp3':
             audio = id3.ID3(self.path)
-            audio.add(id3.TIT2(text = t)) # track name
+            audio.add(id3.TIT2(text = title)) # track name
             audio.add(id3.TRCK(text = str(self.number))) # track number
             audio.add(id3.TALB(text = album.release['title'])) # album
             audio.add(id3.TPE1(text = artist.name)) # artist
@@ -279,12 +346,12 @@ class Track(object):
     def fix_mp4_tags(self, album, disc, artist):
         audio = MP4(self.path)
         tags = audio.tags
-        extra_tags = []
-        for key in tags:
-            if key.startswith('--'):
-                extra_tags.append(key)
         tags['\xa9nam'] = self.recording['title'] if self.recording else get_file_name_without_extension(self.title) # track name
+        # this can fail if the track numbers are coming from a vinyl release
+        # try:
         tags['trkn'] = [(int(self.number), album.get_num_tracks())] # track number
+        # except:
+        #     traceback.print_exc()
         tags['\xa9alb'] = album.release['title'] # album
         tags['\xa9ART'] = artist['name'] # artist
         tags['\xa9day'] = album.release['date'].split('-')[0] # release data
@@ -302,11 +369,13 @@ class Track(object):
         audio.save()
         #TODO tags['\xa9gen'] # genre
         #TODO tags['\xa9lyr'] # lyrics
-        # remove extra stuff
         self.remove_extra_mp4_tags(tags)
         audio.save()
 
     def remove_extra_mp4_tags(self, tags):
+        for key in tags:
+            if key.startswith('--'):
+                tags.pop(key, None)
         tags.pop('\xa9wrt', None)
         tags.pop('\xa9cmt', None)
         tags.pop('desc', None)
@@ -349,6 +418,8 @@ class Track(object):
         tags.pop('sfID', None)
         tags.pop('cmID', None)
         tags.pop('akID', None)
+        tags.pop('iTunNORM', None)
+        tags.pop('Encoding Params', None)
         # custom -- tags
         return tags
 
@@ -441,8 +512,8 @@ class Track(object):
         audio.delall('MLLT')
         # Synchronised tempo codes
         audio.delall('SYTC')
-        #TODO Unsynchronised lyrics/text transcription
-        audio.delall('USLT')
+        #TODO Unsynchronised lyrics/text transcription, don't delete this
+        # audio.delall('USLT')
         # Synchronised lyrics/text
         audio.delall('SYLT')
         # Comments

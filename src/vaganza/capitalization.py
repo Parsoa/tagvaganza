@@ -1,7 +1,5 @@
 import re
 
-import taglib
-
 punctuations = ['.', ':', '-', ',', ';']
 
 coordinating_conjunctions = ['and', 'but', 'or', 'nor', 'for', 'yet', 'and', 'so']

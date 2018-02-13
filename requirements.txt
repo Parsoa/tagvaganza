@@ -1,3 +1,5 @@
+Pillow
 mutagen
 colorama
 musicbrainzngs
+google-api-python-client==1.6.4

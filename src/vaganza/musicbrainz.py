@@ -7,7 +7,6 @@ import traceback
 
 from vaganza import(
     commons,
-    capitalization
 )
 
 import colorama
@@ -103,17 +102,30 @@ def edit_distance(s1, s2):
 # ============================================================================================================================ #
 # ============================================================================================================================ #
 
-def find_minimum_cost_match(results, target, key):
+def find_minimum_cost_match(results, target, key, tie_breaker = None):
     distance = {}
     for result in results:
         t = remove_ambiguous_characters(result[key])
         s = remove_ambiguous_characters(target)
         if is_subsequence(t, s):
             distance[result['id']] = edit_distance(target, result[key])
+        else:
+            distance[result['id']] = 10000000
     if not distance:
         return None
-    m = min(distance, key = distance.get)
-    choice = list(filter(lambda x: x['id'] == m, results))[0]
+    # find the minimum distance
+    m_id = min(distance, key = distance.get)
+    m = distance[m_id]
+    print('minimum:', m, m_id)
+    # get everything with this distance from target
+    candidates = list(filter(lambda x: distance[x['id']] == m, results))
+    # print(candidates)
+    if tie_breaker:
+        candidates = sorted(candidates, key = lambda x: x[tie_breaker])
+        choice = candidates[0]
+        json_print(choice)
+    else:
+        choice = list(filter(lambda x: x['id'] == m_id, results))[0]
     return choice
 
 class memoize:
@@ -147,6 +159,7 @@ def get_all_artist_releases(id):
 def find_closest_artist(artist):
     pretty_print('searching for closest artist to', colorama.Fore.GREEN, artist.name)
     results = musicbrainzngs.search_artists(artist = artist.name)['artist-list']
+    #TODO make choice an array, in case several artists with the same namem, have the user pick the desired one
     choice = find_minimum_cost_match(results, artist.name, 'name')
     if not choice:
         pretty_print(colorama.Fore.RED + 'couldn\'t find an artist with a matching name')
@@ -158,7 +171,9 @@ def find_closest_release(artist, album):
     pretty_print('searching for closest album to', green(album.title), white('with'), green(album.get_num_tracks()), white('tracks'))
     results = get_all_artist_releases(artist['id'])
     # 1. find all releases of this artist with a matching name
-    choice = find_minimum_cost_match(results, album.title, 'title')
+    # will return the matchin release with the oldest release date, avoid reissues and such
+    # we also want to prioritize CD release against Vinyl ones to avoid track numbering issues
+    choice = find_minimum_cost_match(results, album.title, 'title', 'date')
     if not choice:
         album.rename()
         pretty_print(colorama.Fore.RED + 'couldn\'t find a release with matching title')
@@ -181,17 +196,11 @@ def find_closest_release(artist, album):
 
 def find_tracks_in_recording(artist, album, release):
     results = musicbrainzngs.search_recordings(reid = release['id'])['recording-list']
-    numbers = []
-    for i in range(0, album.get_num_tracks()):
-        numbers.append(True)
-    unmatched = []
     for disc in album.discs:
         for track in disc.tracks:
             choice = find_minimum_cost_match(results, track, 'title')
             if not choice:
-                unmatched.append(disc.tracks[track])
                 pretty_print('couldn\'t find a recording with a matching title for', red(track))
-                    #white(', closest match: '), magenta(choice['title']))
                 continue
             r = list(filter(lambda x: choice['release-list'][x]['id'] == release['id'],\
                 range(len(choice['release-list']))))[0]
@@ -200,17 +209,7 @@ def find_tracks_in_recording(artist, album, release):
             disc.tracks[track].recording = choice
             disc.tracks[track].number = r
             results.pop(results.index(choice))
-            try:
-                numbers[int(r) - 1] = False
-            except:
-                pretty_print('number', magenta(r))
-                traceback.print_exc()
             pretty_print('matched', blue(track), white('to'), green(r + '.' , choice['title']))
-    for track in unmatched:
-        for i in range(0, len(numbers)):
-            if numbers[i]:
-                numbers[i] = False
-                track.number = str(i + 1)
 
 def download_cover_art(album, release):
     try:
