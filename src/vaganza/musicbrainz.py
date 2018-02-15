@@ -180,9 +180,9 @@ def find_closest_release(artist, album):
         return None
     results = list(filter(lambda x: x['title'] == choice['title'], results))
     # 2. among these releases find the one whose number of tracks matches the one at hand
-    choice = list(filter(lambda x: x['medium-track-count'] == album.get_num_tracks(), results))
-    if choice:
-        match = choice[0]
+    candidates = list(filter(lambda x: x['medium-track-count'] == album.get_num_tracks(), results))
+    if candidates:
+        match = sorted(candidates, key = lambda x: x['date'])[0]
         #pretty_print(colorama.Fore.RED + 'couldn\'t find a release with matching rack count, closest match: ', magenta(match['title']),\
         #    white('with'), magenta(match['medium-track-count']), white('tracks'))
         pretty_print('matched against', green(match['title']), white('with'), green(match['medium-track-count']), white('tracks'))

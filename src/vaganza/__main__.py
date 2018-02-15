@@ -167,6 +167,7 @@ class Album(object):
             os.rename(self.path, self.path + '_CORRECT')
             return
         year = self.release['date'].split('-')[0]
+        print('date:', self.release['date'])
         os.rename(self.path, self.dir + '/' + self.release['title'].replace('/', '-').replace(':', ' -') + ' (' + year + ')')
 
     def get_num_tracks(self):
@@ -300,11 +301,11 @@ class Track(object):
     def set_cover_art(self, album, disc, artist):
         self.convert()
         title = get_file_name_without_extension(self.title)
-        # try:
-        #     self.number = int(str(t.split('.')[0]))
-        # except:
-        #     traceback.print_exc()
-        #     pass
+        try:
+            self.number = int(str(title.split('.')[0]))
+        except:
+            traceback.print_exc()
+            pass
         title = title[title.find('.') + 2:]
         if get_file_extension(self.title) == 'mp3':
             audio = id3.ID3(self.path)
@@ -327,7 +328,7 @@ class Track(object):
             audio = MP4(self.path)
             tags = audio.tags
             tags.pop('covr', None)
-            tags['\xa9nam'] = t # track name
+            tags['\xa9nam'] = title # track name
             tags['trkn'] = [(int(self.number), album.get_num_tracks())] # track number
             tags['\xa9alb'] = album.release['title'] # album
             tags['\xa9ART'] = artist.name # artist
