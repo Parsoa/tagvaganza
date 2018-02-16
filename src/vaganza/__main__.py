@@ -200,6 +200,7 @@ class Disc(object):
             # iteratively find the buckets and their sizes
             for track in tracks:
                 if track.number:
+                    # assuming that vinyl numbers are in the format A1, A2, B1 ...
                     key = track.number.upper()[0]
                     if not key in numbers:
                         numbers[key] = [None] * int(track.number[0:])
