@@ -27,7 +27,7 @@ from googleapiclient.discovery import build
 # ============================================================================================================================ #
 # ============================================================================================================================ #
 
-def identitiy(sep = ' ', *vargs):
+def identitiy(*vargs, sep = ' '):
     return ''.join(functools.reduce(lambda x, y: x + str(y) + sep, vargs))
 
 def white(*args):
@@ -194,40 +194,54 @@ class Disc(object):
                     int(track.number)
                 except:
                     is_vinyl = True
+                    break
         # it is a vinyl, track numbers are not integers
         if is_vinyl:
             numbers = {}
             # iteratively find the buckets and their sizes
             for track in tracks:
                 if track.number:
-                    # assuming that vinyl numbers are in the format A1, A2, B1 ...
+                    # assuming that vinyl numbers are in the format A1, A2, B1 ... or simply A, B, C ...
                     key = track.number.upper()[0]
-                    if not key in numbers:
-                        numbers[key] = [None] * int(track.number[0:])
+                    if len(track.number) == 1:
+                        numbers[key] = [None]
+                    else:
+                        numbers[key] = [None] * max(len(numbers[key]) if key in numbers else 0, int(track.number[1:]))
             for track in tracks:
                 if track.number:
                     key = track.number.upper()[0]
-                    numbers[key][int(track.number[0:]) - 1] = track
+                    if len(track.number) == 1:
+                        numbers[key][0] = track
+                    else:
+                        print(key, int(track.number[1:]) - 1)
+                        numbers[key][int(track.number[1:]) - 1] = track
             for track in tracks:
                 for key in numbers:
                     if track in numbers[key]:
                         # add the length of all buckets with a lexicographically smaller key
                         offset = sum(list(map(lambda x: len(numbers[x]) if x < key else 0, numbers.keys())))
                         track.number = offset + numbers[key].index(track) + 1
+                        pretty_print(white('mapped'), blue(key + str(numbers[key].index(track) + 1)), white('to'), blue(track.number))
             # now find the first empty place
+            base = 1
             for track in tracks:
                 if not track.number:
+                    print('finding number for', track.title)
+                    found = False
                     for key in numbers:
-                        found = False
                         for i in range(0, len(numbers[key])):
                             # there is an empty slot in this bucket
-                            if not numbers[key][i]:
+                            if not numbers[key][i] and not found:
                                 found = True
                                 offset = sum(list(map(lambda x: len(numbers[x]) if x < key else 0, numbers.keys())))
                                 track.number = offset + i + 1
                                 break
-                        if found:
-                            break
+                    if not found:
+                        # no empty slot found, append to the end
+                        offset = sum(list(map(lambda x: len(numbers[x]), numbers.keys())))
+                        track.number = offset + base
+                        base += 1 
+                        
         # track numbers are integers
         else:
             # list of all possible track numbers
@@ -270,7 +284,7 @@ class Track(object):
         try:
             ext = get_file_extension(self.title)
             if ext.lower() == 'flac':
-                pretty_print(magenta('convertin FLAC to ALAC:', self.title))
+                pretty_print(magenta('converting FLAC to ALAC:', self.title))
                 subprocess.call(['ffmpeg', '-i', self.path, '-acodec', 'alac', os.path.join(self.dir, get_file_name_without_extension(self.title) + '.m4a')])
                 os.remove(self.path)
                 self.title = get_file_name_without_extension(self.title) + '.m4a'
@@ -290,7 +304,7 @@ class Track(object):
                 self.number = '0' + str(self.number)
         except:
             pass
-        os.rename(self.path, self.dir + '/' + self.number + '. ' + self.recording['title'].replace('/', '-').replace(':', ' -') + '.' + self.extension)
+        os.rename(self.path, self.dir + '/' + str(self.number) + '. ' + self.recording['title'].replace('/', '-').replace(':', ' -') + '.' + self.extension)
 
     def fix_tags(self, album, disc, artist):
         self.convert()
@@ -375,9 +389,12 @@ class Track(object):
         audio.save()
 
     def remove_extra_mp4_tags(self, tags):
+        remove = []
         for key in tags:
             if key.startswith('--'):
-                tags.pop(key, None)
+                remove.append(key)
+        for key in remove:
+            tags.pop(key, None)
         tags.pop('\xa9wrt', None)
         tags.pop('\xa9cmt', None)
         tags.pop('desc', None)

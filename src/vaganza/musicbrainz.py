@@ -121,6 +121,8 @@ def find_minimum_cost_match(results, target, key, tie_breaker = None):
     candidates = list(filter(lambda x: distance[x['id']] == m, results))
     # print(candidates)
     if tie_breaker:
+        # get rid of those without the tie-breaker field
+        candidates = list(filter(lambda x: tie_breaker in x, candidates))
         candidates = sorted(candidates, key = lambda x: x[tie_breaker])
         choice = candidates[0]
         json_print(choice)
@@ -182,6 +184,9 @@ def find_closest_release(artist, album):
     # 2. among these releases find the one whose number of tracks matches the one at hand
     candidates = list(filter(lambda x: x['medium-track-count'] == album.get_num_tracks(), results))
     if candidates:
+        for candidate in candidates:
+            if not 'date' in candidate:
+                candidate['date'] = '99999999'
         match = sorted(candidates, key = lambda x: x['date'])[0]
         #pretty_print(colorama.Fore.RED + 'couldn\'t find a release with matching rack count, closest match: ', magenta(match['title']),\
         #    white('with'), magenta(match['medium-track-count']), white('tracks'))
