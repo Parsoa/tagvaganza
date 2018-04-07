@@ -6,6 +6,7 @@ import functools
 import traceback
 
 from vaganza import(
+    config,
     commons,
 )
 
@@ -23,19 +24,19 @@ def white(*args):
     return identitiy(colorama.Fore.WHITE, *args)
 
 def green(*args):
-    return identitiy(colorama.Fore.GREEN, *args)
+    return identitiy(colorama.Fore.GREEN, *args, colorama.Fore.WHITE)
 
 def red(*args):
-    return identitiy(colorama.Fore.RED, *args)
+    return identitiy(colorama.Fore.RED, *args, colorama.Fore.WHITE)
 
 def cyan(*args):
-    return identitiy(colorama.Fore.CYAN, *args)
+    return identitiy(colorama.Fore.CYAN, *args, colorama.Fore.WHITE)
 
 def blue(*args):
-    return identitiy(colorama.Fore.BLUE, *args)
+    return identitiy(colorama.Fore.BLUE, *args, colorama.Fore.WHITE)
 
 def magenta(*args):
-    return identitiy(colorama.Fore.MAGENTA, *args)
+    return identitiy(colorama.Fore.MAGENTA, *args, colorama.Fore.WHITE)
 
 def pretty_print(*args):
     def inner(*vargs):
@@ -55,7 +56,7 @@ def remove_non_ascii_characters(s):
     return s
 
 def remove_whitespaces(s):
-    s = re.sub('\s', '', s) #removes whitespaces
+    s = re.sub('\s+', '', s) #removes whitespaces
     return s
 
 def remove_punctuation(s):
@@ -66,7 +67,7 @@ def remove_ambiguous_characters(s):
     return remove_non_ascii_characters(
                 remove_whitespaces(
                     remove_punctuation(
-                        s
+                        s.lower()
                     )
                 )
             )
@@ -81,6 +82,13 @@ def is_subsequence(x, y):
     it = iter(y)
     return all(c in it for c in x)
 
+def is_subsequence_randomized(x, y):
+    x = x.lower()
+    y = y.lower()
+    if len(x) > len(y):
+        # print('x > y, switching')
+        return is_subsequence_randomized(y, x)
+
 def edit_distance(s1, s2):
     s1 = s1.lower()
     s2 = s2.lower()
@@ -89,7 +97,7 @@ def edit_distance(s1, s2):
 
     distances = range(len(s1) + 1)
     for i2, c2 in enumerate(s2):
-        distances_ = [i2+1]
+        distances_ = [i2 + 1]
         for i1, c1 in enumerate(s1):
             if c1 == c2:
                 distances_.append(distances[i1])
@@ -102,17 +110,22 @@ def edit_distance(s1, s2):
 # ============================================================================================================================ #
 # ============================================================================================================================ #
 
+# This assumes that the title in the filename is always bigger than the one in the database which can cause problems
 def find_minimum_cost_match(results, target, key, tie_breaker = None):
     distance = {}
+    p = False
     for result in results:
         t = remove_ambiguous_characters(result[key])
         s = remove_ambiguous_characters(target)
+        # pretty_print('comparing', blue(t), 'against', green(s))
         if is_subsequence(t, s):
             distance[result['id']] = edit_distance(target, result[key])
         else:
             distance[result['id']] = 10000000
+        if p:
+            pretty_print('disatnce to', red(result[key]), '=', distance[result['id']], blue(s), blue(t))
     if not distance:
-        return None
+        return None, None
     # find the minimum distance
     m_id = min(distance, key = distance.get)
     m = distance[m_id]
@@ -125,10 +138,10 @@ def find_minimum_cost_match(results, target, key, tie_breaker = None):
         candidates = list(filter(lambda x: tie_breaker in x, candidates))
         candidates = sorted(candidates, key = lambda x: x[tie_breaker])
         choice = candidates[0]
-        json_print(choice)
+        # json_print(choice)
     else:
         choice = list(filter(lambda x: x['id'] == m_id, results))[0]
-    return choice
+    return choice, not m == 10000000
 
 class memoize:
     def __init__(self, f):
@@ -159,15 +172,22 @@ def get_all_artist_releases(id):
 # ============================================================================================================================ #
 
 def find_closest_artist(artist):
-    pretty_print('searching for closest artist to', colorama.Fore.GREEN, artist.name)
-    results = musicbrainzngs.search_artists(artist = artist.name)['artist-list']
-    #TODO make choice an array, in case several artists with the same namem, have the user pick the desired one
-    choice = find_minimum_cost_match(results, artist.name, 'name')
-    if not choice:
-        pretty_print(colorama.Fore.RED + 'couldn\'t find an artist with a matching name')
-        return None
-    pretty_print('matched against', colorama.Fore.GREEN, choice['name'])
-    return choice
+    c = config.Configuration()
+    if c.artist_id:
+        pretty_print('searching for artist with id', green(c.artist_id))
+        result = musicbrainzngs.get_artist_by_id(id = c.artist_id)['artist']
+        json_print(result)
+        return result
+    else:
+        pretty_print('searching for closest artist to', colorama.Fore.GREEN, artist.name)
+        results = musicbrainzngs.search_artists(artist = artist.name)['artist-list']
+        #TODO make choice an array, in case several artists with the same namem, have the user pick the desired one
+        choice, certainty = find_minimum_cost_match(results, artist.name, 'name')
+        if not choice:
+            pretty_print(colorama.Fore.RED + 'couldn\'t find an artist with a matching name')
+            return None
+        pretty_print('matched against', colorama.Fore.GREEN, choice['name'])
+        return choice
 
 def find_closest_release(artist, album):
     pretty_print('searching for closest album to', green(album.title), white('with'), green(album.get_num_tracks()), white('tracks'))
@@ -175,7 +195,7 @@ def find_closest_release(artist, album):
     # 1. find all releases of this artist with a matching name
     # will return the matchin release with the oldest release date, avoid reissues and such
     # we also want to prioritize CD release against Vinyl ones to avoid track numbering issues
-    choice = find_minimum_cost_match(results, album.title, 'title', 'date')
+    choice, certainty = find_minimum_cost_match(results, album.title, 'title', 'date')
     if not choice:
         album.rename()
         pretty_print(colorama.Fore.RED + 'couldn\'t find a release with matching title')
@@ -203,18 +223,22 @@ def find_tracks_in_recording(artist, album, release):
     results = musicbrainzngs.search_recordings(reid = release['id'])['recording-list']
     for disc in album.discs:
         for track in disc.tracks:
-            choice = find_minimum_cost_match(results, track, 'title')
-            if not choice:
+            choice, certainty = find_minimum_cost_match(results, track, 'title')
+            if not choice or not certainty:
                 pretty_print('couldn\'t find a recording with a matching title for', red(track))
                 continue
-            r = list(filter(lambda x: choice['release-list'][x]['id'] == release['id'],\
-                range(len(choice['release-list']))))[0]
-            r = choice['release-list'][r]
+            r = list(filter(lambda x: x['id'] == release['id'], choice['release-list']))[0]
+            # print(release['id'])
+            # json_print(r)
+            # exit()
+            # if choice['title'].find('Mine') != -1:
+                # json_print(choice)
             r = r['medium-list'][0]['track-list'][0]['number']
             disc.tracks[track].recording = choice
             disc.tracks[track].number = r
             results.pop(results.index(choice))
-            pretty_print('matched', blue(track), white('to'), green(r + '.' , choice['title']))
+            pretty_print('matched', blue(track), white('to'),
+                green(r + '.' , choice['title']) if certainty else red(r + '.' , choice['title']))
 
 def download_cover_art(album, release):
     try:

@@ -16,10 +16,14 @@ class Configuration:
     class __impl:
         def __init__(self,
                         work_dir,
+                        is_album,
                         is_artist,
+                        artist_id,
                         set_covers):
             self.work_dir = work_dir
+            self.is_album = is_album
             self.is_artist = is_artist
+            self.artist_id = artist_id
             self.set_covers = set_covers
 
     __instance = None
@@ -44,8 +48,10 @@ def init():
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--path", default = os.path.abspath('/Users/Parsoa/Desktop/tagvaganza'))
+    parser.add_argument("--album", action='store_true')
     parser.add_argument("--artist", action='store_true')
     parser.add_argument("--covers", action='store_true')
+    parser.add_argument("--artistid")
     args = parser.parse_args()
     #
     return args
@@ -54,6 +60,8 @@ def configure(args):
     colorama.init()
     Configuration(
         work_dir = args.path,
+        is_album = args.album,
         is_artist = args.artist,
-        set_covers = args.covers,
+        artist_id = args.artistid,
+        set_covers = args.covers
     )

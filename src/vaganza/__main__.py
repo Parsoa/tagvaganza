@@ -158,8 +158,11 @@ class Album(object):
         for disc in self.discs:
             disc.fix_track_numbers()
             for track in disc.tracks:
-                disc.tracks[track].fix_tags(self, disc, artist)
-                disc.tracks[track].rename()
+                try:
+                    disc.tracks[track].fix_tags(self, disc, artist)
+                    disc.tracks[track].rename()
+                except:
+                    pass
         self.rename()
 
     def rename(self):
@@ -248,7 +251,7 @@ class Disc(object):
             numbers = [False] * len(tracks)
             # assign tracks with a number to their corresponding position
             for track in tracks:
-                if track.number:
+                if track.number and int(track.number) <= len(tracks):
                     numbers[int(track.number) - 1] = True
             # assign gaps to tracks without numbers
             for track in tracks:
@@ -297,13 +300,9 @@ class Track(object):
         if not self.recording:
             os.rename(self.path, self.dir + '/' + get_file_name_without_extension(self.title) + '_CORRECT' + '.' + self.extension)
             return
-        # for some EPs or Singles the track number might not be an int but rather a side name
-        try:
-            n = int(self.number)
-            if n < 10:
-                self.number = '0' + str(self.number)
-        except:
-            pass
+        n = int(self.number)
+        if n < 10:
+            self.number = '0' + str(self.number)
         os.rename(self.path, self.dir + '/' + str(self.number) + '. ' + self.recording['title'].replace('/', '-').replace(':', ' -') + '.' + self.extension)
 
     def fix_tags(self, album, disc, artist):
@@ -363,11 +362,7 @@ class Track(object):
         audio = MP4(self.path)
         tags = audio.tags
         tags['\xa9nam'] = self.recording['title'] if self.recording else get_file_name_without_extension(self.title) # track name
-        # this can fail if the track numbers are coming from a vinyl release
-        # try:
         tags['trkn'] = [(int(self.number), album.get_num_tracks())] # track number
-        # except:
-        #     traceback.print_exc()
         tags['\xa9alb'] = album.release['title'] # album
         tags['\xa9ART'] = artist['name'] # artist
         tags['\xa9day'] = album.release['date'].split('-')[0] # release data
@@ -603,7 +598,10 @@ def get_artist_for_directory(path, artists):
 
 def get_album_for_directory(path, artists):
     for artist in artists:
+        # print(artist)
         for album in artists[artist].albums:
+            # print(album)
+            # pretty_print(blue(path), green(artists[artist].albums[album].path))
             if path == artists[artist].albums[album].path:
                 return artists[artist].albums[album]
     return None
@@ -626,7 +624,7 @@ def iterate_scans(path):
         for filename in filenames:
             ext = get_file_extension(filename)
             number = str(n) if n >= 10 else '0' + str(n)
-            base = 'KIRE_KHAR_' + number
+            base = 'BOKHOLAMET_' + number
             n += 1
             os.rename(os.path.join(dirpath, filename), os.path.join(dirpath, base + '.' + ext))
     n = 1
@@ -649,7 +647,16 @@ if __name__ == '__main__':
     # get all artists and album names
     for (dirpath, dirnames, filenames) in os.walk(c.work_dir):
         if dirpath == c.work_dir:
-            if c.is_artist:
+            if c.is_album:
+                artist_path = os.path.abspath(os.path.join(c.work_dir, os.pardir))
+                artist = artist_path.split('/')[-1]
+                artists[artist] = Artist(name = artist, dir = os.path.abspath(os.path.join(artist_path, '..')))
+                #
+                pretty_print('found artist', artist)
+                album = dirpath.split('/')[-1]
+                artists[artist].albums[album] = Album(title = album, dir = artist_path)
+                pretty_print('\tfound album', album)
+            elif c.is_artist:
                 artist = dirpath.split('/')[-1]
                 artists[artist] = Artist(name = artist, dir = os.path.abspath(os.path.join(dirpath, '..')))
             else:
@@ -658,14 +665,16 @@ if __name__ == '__main__':
                     artists[artist] = Artist(name = artist, dir = dirpath)
                 continue
         # if we are inside an artist directory
-        artist = get_artist_for_directory(dirpath, artists)
-        if artist:
-            for album in dirnames:
-                pretty_print('\tfound album', album)
-                artist.albums[album] = Album(title = album, dir = dirpath)
-            continue
+        if not c.is_album:
+            artist = get_artist_for_directory(dirpath, artists)
+            if artist:
+                for album in dirnames:
+                    pretty_print('\tfound album', album)
+                    artist.albums[album] = Album(title = album, dir = dirpath)
+                continue
         # if we are inside an album directory
         album = get_album_for_directory(dirpath, artists)
+        # print(dirpath)
         if album:
             found = False
             for disc in dirnames:

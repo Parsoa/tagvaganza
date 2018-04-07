@@ -32,40 +32,72 @@
     ],
     "artist-credit-phrase": "Dark Tranquillity",
     "ext:score": "100",
-    "id": "3a28aa17-c26d-446b-a8fd-a9136ec0a777",
-    "length": "262746",
+    "id": "6415e7e3-f171-4604-94d5-bb2941adc9d4",
+    "length": "146826",
     "release-list": [
         {
-            "artist-credit": [
-                {
-                    "artist": {
-                        "id": "89ad4ac3-39f7-470e-963a-56509c546377",
-                        "name": "Various Artists",
-                        "sort-name": "Various Artists"
-                    }
-                }
-            ],
-            "artist-credit-phrase": "Various Artists",
-            "country": "FR",
-            "date": "1997",
-            "id": "cf005ea9-d699-4f30-a149-6b5dd3133f07",
+            "country": "JP",
+            "date": "1996-02-21",
+            "id": "4ca72a2b-1f0f-443f-8342-185c62a0695f",
             "medium-list": [
                 {
                     "format": "CD",
                     "position": "1",
-                    "track-count": 13,
+                    "track-count": 12,
                     "track-list": [
                         {
-                            "id": "88994d2c-c1e0-38a0-93e2-c1315e01154d",
-                            "length": "261880",
-                            "number": "11",
-                            "title": "Lady in Black",
-                            "track_or_recording_length": "261880"
+                            "id": "2636a48e-7114-337e-b7cb-d97665bcfcbf",
+                            "length": "146666",
+                            "number": "10",
+                            "title": "Mine is the Grandeur",
+                            "track_or_recording_length": "146666"
                         }
                     ]
                 }
             ],
-            "medium-track-count": 13,
+            "medium-track-count": 12,
+            "release-event-list": [
+                {
+                    "area": {
+                        "id": "2db42837-c832-3c27-b4a3-08198f75693c",
+                        "iso-3166-1-code-list": [
+                            "JP"
+                        ],
+                        "name": "Japan",
+                        "sort-name": "Japan"
+                    },
+                    "date": "1996-02-21"
+                }
+            ],
+            "release-group": {
+                "id": "06a50231-c772-3766-8f20-54dd144a2421",
+                "primary-type": "Album",
+                "type": "Album"
+            },
+            "status": "Official",
+            "title": "The Gallery"
+        },
+        {
+            "country": "FR",
+            "date": "1995-04-05",
+            "id": "7d7ca566-343b-4f4f-a110-a88c8ed8bad7",
+            "medium-list": [
+                {
+                    "format": "CD",
+                    "position": "1",
+                    "track-count": 11,
+                    "track-list": [
+                        {
+                            "id": "d9456f45-c39e-38a2-95d8-640ce47d8881",
+                            "length": "146826",
+                            "number": "10",
+                            "title": "Mine Is the Grandeur...",
+                            "track_or_recording_length": "146826"
+                        }
+                    ]
+                }
+            ],
+            "medium-track-count": 11,
             "release-event-list": [
                 {
                     "area": {
@@ -76,16 +108,27 @@
                         "name": "France",
                         "sort-name": "France"
                     },
-                    "date": "1997"
+                    "date": "1995-04-05"
+                },
+                {
+                    "area": {
+                        "id": "85752fda-13c4-31a3-bee5-0e5cb1f51dad",
+                        "iso-3166-1-code-list": [
+                            "DE"
+                        ],
+                        "name": "Germany",
+                        "sort-name": "Germany"
+                    },
+                    "date": "1995-07-03"
                 }
             ],
             "release-group": {
-                "id": "76ea6d79-9515-3e2e-a678-c248a6f5e1d9",
+                "id": "06a50231-c772-3766-8f20-54dd144a2421",
                 "primary-type": "Album",
                 "type": "Album"
             },
             "status": "Official",
-            "title": "Mercyful Fate Tribute"
+            "title": "The Gallery"
         },
         {
             "country": "FR",
@@ -98,11 +141,11 @@
                     "track-count": 16,
                     "track-list": [
                         {
-                            "id": "04378925-35ae-3743-87c0-9fdfa7d77a14",
-                            "length": "262746",
-                            "number": "15",
-                            "title": "Lady in Black",
-                            "track_or_recording_length": "262746"
+                            "id": "70f561e1-7abc-32b1-b191-4f01288b5df3",
+                            "length": "146826",
+                            "number": "10",
+                            "title": "Mine Is the Grandeur...",
+                            "track_or_recording_length": "146826"
                         }
                     ]
                 }
@@ -130,51 +173,6 @@
             "title": "The Gallery"
         },
         {
-            "country": "GB",
-            "date": "2008-05-03",
-            "id": "ad517a6e-13b5-40fd-bf5f-87bd6bd087c7",
-            "medium-list": [
-                {
-                    "format": "CD",
-                    "position": "1",
-                    "track-count": 14,
-                    "track-list": [
-                        {
-                            "id": "5f721893-5f47-3bf7-b3e6-c5dbeaa24aac",
-                            "length": "265000",
-                            "number": "11",
-                            "title": "Lady in Black",
-                            "track_or_recording_length": "265000"
-                        }
-                    ]
-                }
-            ],
-            "medium-track-count": 14,
-            "release-event-list": [
-                {
-                    "area": {
-                        "id": "8a754a16-0027-3a29-b6d7-2b40ea0481ed",
-                        "iso-3166-1-code-list": [
-                            "GB"
-                        ],
-                        "name": "United Kingdom",
-                        "sort-name": "United Kingdom"
-                    },
-                    "date": "2008-05-03"
-                }
-            ],
-            "release-group": {
-                "id": "921ce342-552b-3388-9c11-06a5f48f7073",
-                "primary-type": "Album",
-                "secondary-type-list": [
-                    "Compilation"
-                ],
-                "type": "Compilation"
-            },
-            "status": "Bootleg",
-            "title": "A Closer End"
-        },
-        {
             "country": "US",
             "date": "2005-04-05",
             "id": "cd0071fb-eb46-4bc0-85d4-4e049fef9543",
@@ -185,11 +183,11 @@
                     "track-count": 16,
                     "track-list": [
                         {
-                            "id": "47da2609-3757-39f1-b3a0-edc73356b67d",
-                            "length": "262746",
-                            "number": "15",
-                            "title": "Lady in Black",
-                            "track_or_recording_length": "262746"
+                            "id": "7c9360b5-78c0-3730-8146-1ad3f746e6f6",
+                            "length": "146826",
+                            "number": "10",
+                            "title": "Mine Is the Grandeur...",
+                            "track_or_recording_length": "146826"
                         }
                     ]
                 }
@@ -217,56 +215,53 @@
             "title": "The Gallery"
         },
         {
-            "country": "XW",
-            "date": "2003",
-            "id": "f3865107-b5a4-4e84-976f-0617b923b2a2",
+            "country": "FR",
+            "date": "1996",
+            "id": "53dcb867-b809-4a36-a61d-5e7f39afa92c",
             "medium-list": [
                 {
-                    "format": "Digital Media",
+                    "format": "CD",
                     "position": "1",
-                    "track-count": 19,
+                    "track-count": 13,
                     "track-list": [
                         {
-                            "id": "75596a2c-36ee-41bd-abb4-6e8bf35fcb39",
-                            "length": "261910",
-                            "number": "7",
-                            "title": "Lady in Black",
-                            "track_or_recording_length": "261910"
+                            "id": "12a513f7-a381-30a1-91d2-6e3f8a065a08",
+                            "length": "147000",
+                            "number": "10",
+                            "title": "Mine Is the Grandeur...",
+                            "track_or_recording_length": "147000"
                         }
                     ]
                 }
             ],
-            "medium-track-count": 19,
+            "medium-track-count": 13,
             "release-event-list": [
                 {
                     "area": {
-                        "id": "525d4e18-3d00-31b9-a58b-a146a916de8f",
+                        "id": "08310658-51eb-3801-80de-5a0739207115",
                         "iso-3166-1-code-list": [
-                            "XW"
+                            "FR"
                         ],
-                        "name": "[Worldwide]",
-                        "sort-name": "[Worldwide]"
+                        "name": "France",
+                        "sort-name": "France"
                     },
-                    "date": "2003"
+                    "date": "1996"
                 }
             ],
             "release-group": {
-                "id": "a1f4c057-c076-4df3-bb65-792984bfebec",
+                "id": "06a50231-c772-3766-8f20-54dd144a2421",
                 "primary-type": "Album",
-                "secondary-type-list": [
-                    "Compilation"
-                ],
-                "type": "Compilation"
+                "type": "Album"
             },
-            "status": "Bootleg",
-            "title": "Great Metal Covers, Volume 15"
+            "status": "Official",
+            "title": "The Gallery"
         }
     ],
     "tag-list": [
         {
-            "count": "2",
-            "name": "melodic death metal"
+            "count": "1",
+            "name": "instrumental"
         }
     ],
-    "title": "Lady in Black"
+    "title": "Mine is the Grandeur"
 }
