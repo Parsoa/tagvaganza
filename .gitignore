@@ -6,4 +6,4 @@ data/
 
 *.pyc
 
-src/commons.py
+src/vaganza/commons.py
