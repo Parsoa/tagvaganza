@@ -6,4 +6,4 @@ data/
 
 *.pyc
 
-src/config.py
+src/commons.py
